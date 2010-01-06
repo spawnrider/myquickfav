@@ -225,6 +225,11 @@
 		function init() {
 			// fonction d'initialisation onLoad
 			console.log("MyQuickFav - initialisation");
+			if(group_id == undefined || group_id == 'null') {
+				chrome.tabs.create({url: 'options.html'});
+				return;
+			}
+			console.log("Group_id : "+group_id);
 			// recupere le dossier des bookmarks en mꮯire
 			get_bookmarks_dir();
 			// recupere l'onglet courant
