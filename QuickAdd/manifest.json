@@ -1,6 +1,10 @@
 ﻿{
 	"name": "MyQuickFav - QuickAdd",
 	"version": "1.0",
+	"icons": { 
+		"48": "icon48.png",
+		"128": "icon128.png" 
+	},
 	"description": "This extension adds a QuickAdd button inside the address bar that lets you quickly add the current page in a specified bookmark folder.",
 	"background_page": "background.html",
 	"page_action": {
@@ -8,5 +12,6 @@
 		"default_title": "Please click me to configure QuickAdd options"
 	},
 	"options_page": "options.html",
-	"permissions": ["tabs", "bookmarks"]
+	"permissions": ["tabs", "bookmarks"],
+	"update_url": "http://myquickfav.googlecode.com/svn/trunk/QuickAdd/updates.xml"
 }
