@@ -1,0 +1,107 @@
+﻿<html>
+<head>
+<script>
+	var lastTabId = 0;
+	var lastTabUrl = "";
+	var canAdd = false;
+	var group_id = undefined; // Identifiant du bookmark folder
+
+	// Action lorsque l'onglet actif change
+	chrome.tabs.onSelectionChanged.addListener(function(tabId) {
+		chrome.tabs.get(tabId, function(tab) {
+			tab_action(tab);
+		});
+	});
+	
+	// Action lorsque l'onglet est séléctionné
+	chrome.tabs.getSelected(null, function(tab) {
+		tab_action(tab);
+	});
+	
+	// Action générique sur un onglet
+	function tab_action(tab) {
+		lastTabId = tab.id;
+		lastTabUrl = tab.url;
+		chrome.pageAction.show(lastTabId);
+		list_bookmarks();
+	}
+
+	// Parcours les bookmarks...
+	function list_bookmarks() {
+		// Restaure l'id du group
+		group_id = localStorage["group_id"];
+		if(group_id == undefined || group_id == 'null') { return;}
+		console.log("Group_id : "+group_id);
+		chrome.bookmarks.getChildren(group_id, callback_show);
+	}
+
+	// Recherche récursive de l'url de la page courante dans les bookmarks
+	var callback_show = function show_tree(tree) {
+		if(!tree) return;
+		for (var i = 0; i < tree.length; ++i) {
+			if (tree[i].url != null && tree[i].url.toLowerCase() == lastTabUrl.toLowerCase()) {
+				chrome.pageAction.show(lastTabId);
+				chrome.pageAction.setIcon({path: "star.png", tabId: lastTabId});
+				chrome.pageAction.setTitle({title: "Remove from the bookmarks", tabId: lastTabId});
+				canAdd = false;
+				return;
+			}
+		}
+		chrome.pageAction.show(lastTabId);
+		chrome.pageAction.setIcon({path: "star-empty.png", tabId: lastTabId});
+		chrome.pageAction.setTitle({title: "Add to the bookmarks", tabId: lastTabId});
+		canAdd = true;
+	}
+
+	// Parcours des bookmarks pour suppression...
+	function remove_bookmarks() {
+		chrome.bookmarks.getChildren(group_id, callback_remove);
+	}
+
+	// Recherche récursive de l'url à supprimer des bookmarks
+	var callback_remove = function show_tree(tree) {
+		if(!tree) return;
+		for (var i = 0; i < tree.length; ++i) {
+			if (tree[i].url != null && tree[i].url == lastTabUrl) {
+				chrome.bookmarks.remove(tree[i].id);
+				chrome.pageAction.setTitle({title: "Add to the bookmarks", tabId: lastTabId});
+				chrome.pageAction.setIcon({path: "star-empty.png", tabId: lastTabId});
+				canAdd = true; 
+				return;
+			}
+		}
+		canAdd = false;
+	}
+
+	// Action lorsque un bookmarks à été ajouté
+	chrome.bookmarks.onCreated.addListener(function(id, bookmark) {
+		if(bookmark.url == lastTabUrl) {
+			chrome.pageAction.setIcon({path: "star.png", tabId: lastTabId});
+			chrome.pageAction.setTitle({title: "Remove from the bookmarks", tabId: lastTabId});
+			canAdd=false;
+		}
+	});
+
+	// Action lors d'un clic sur l'icône
+	chrome.pageAction.onClicked.addListener(function(tab) {
+		if(group_id == undefined || group_id == 'null') {
+			chrome.tabs.create({url: 'options.html'});
+			return;
+		}
+		console.log("Group_id : "+group_id);
+		if(canAdd){
+			// Ajoute le bookmark
+			chrome.bookmarks.create({'parentId': group_id,
+				'title': tab.title,
+				'url': tab.url
+			});
+		} else {
+			// Supprime le bookmarks
+			remove_bookmarks();
+		}
+	});
+</script>
+</head>
+<body>
+</body>
+</html>

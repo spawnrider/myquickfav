@@ -1,0 +1,66 @@
+<html>
+<head><title>MyQuickFav - QuickAdd :: Options</title>
+<script type="text/javascript">
+var favorite = null;
+
+// Sauvegarde le dossier dans le localStorage
+function save_options() {
+	var select = document.getElementById("groups");
+	var group_id = select.children[select.selectedIndex].value;
+	localStorage["group_id"] = group_id;
+	
+	// Update status to let user know options were saved.
+	var status = document.getElementById("status");
+	status.innerHTML = "Options saved.";
+	setTimeout(function() {
+		status.innerHTML = "";
+	}, 750);
+}
+
+// Restaure le dossier du localStorage
+function restore_options() {
+	// restaure saved group id
+	favorite = localStorage["group_id"];
+	console.log("group_id : "+favorite);
+	
+	// load all the group from the bookmarks
+	load_options();
+}
+
+// Liste tous les dossiers de bookmarks
+function load_options() {
+	chrome.bookmarks.getTree(function (tree) {
+		chrome.bookmarks.getChildren(tree[0].id,callback_search);
+	});
+}
+
+// Parcours récursif de tous les bookmarks
+var callback_search = function get_tree(tree) {
+	var parent = document.getElementById("groups");
+	for (var i = 0; i < tree.length; ++i) {
+		if (tree[i].url == null) {
+			var item = document.createElement("option");
+			item.setAttribute('value',tree[i].id);
+			item.text = tree[i].title;
+			if(tree[i].id == favorite) {
+				item.selected = "true";
+			}
+			parent.appendChild(item);
+			chrome.bookmarks.getChildren(tree[i].id, callback_search);
+		}
+	}
+}
+</script>
+</head>
+<body onload="restore_options()">
+Choose a folder to store your differents bookmarks<br/>
+Folder :
+<select id="groups">
+</select>
+
+<br/>
+<button onclick="save_options()">Save</button>
+<br/>
+<div id="status"></div>
+</body>
+</html>
