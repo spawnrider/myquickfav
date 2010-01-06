@@ -170,6 +170,13 @@
 			alink3.href = tree_node.url;
 			alink3.appendChild(alink_text);
 			alink3.setAttribute('id','link'+tree_node.id);
+			alink3.onclick = function() {
+				// Ouvre le boomark selectionné dans un nouvel onglet
+				//chrome.tabs.create({url: tree_node.url});
+				chrome.tabs.getSelected(null, function(tab) {
+					chrome.tabs.update(tab.id,{url: tree_node.url});
+				});
+			};
 			td_in3.appendChild(alink3);
 			
 			tr.appendChild(td_in1);
