@@ -55,6 +55,10 @@
 		// Restaure la taille des sous-chaines (titre)
 		var wrap_size = 40; 
 		
+		
+		//nombre d'items
+		var nb_items = 0;
+		
 		function get_bookmarks_dir() {
 			// Vérifie si le groupe existe bien
 			chrome.bookmarks.get(group_id, function (tree) {
@@ -98,11 +102,15 @@
 					item.appendChild(create_link(tree[i]));
 					// Liste ordre d'ajout décroissant
 					list.insertBefore(item, list.firstChild);
+					// Incrémentation du compteur d'item 
+					nb_items++;
 				}
 			}
 			if(tree[0]) { 
 				if(tree[0].parentId == group_id) {
 					var parent = document.getElementById("level0");
+					chrome.browserAction.setBadgeText({text:nb_items+''});
+					chrome.browserAction.setBadgeBackgroundColor({color:[255, 0, 0, 255]});
 				} else {
 					var parent = document.getElementById("level"+tree[0].parentId);
 				}
@@ -188,6 +196,7 @@
 		
 		function list_bookmarks() {
 			// On commence du noeud principal
+			nb_items = 0;
 			chrome.bookmarks.getChildren(group_id, callback_show);
 		}
 		
@@ -215,7 +224,12 @@
 				// Creation du lien url
 				var td_in3 = document.createElement("td");
 				var alink3 = document.createElement("a");
-				var title = (tab.title.length>(wrap_size-3)) ? tab.title.substring(0, wrap_size)+'...' : tab.title;
+				if(tab.title) {
+					var title = (tab.title.length>(wrap_size-3)) ? tab.title.substring(0, wrap_size)+'...' : tab.title;
+				} else {
+					var title = "no title";
+				}
+				
 				var alink_text = document.createTextNode(title);
 				alink3.href = tab.url;
 				alink3.appendChild(alink_text);
