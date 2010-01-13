@@ -5,11 +5,6 @@
 		html {
 			overflow: auto; 
 		}
-		ul, li {
-			list-style: none;
-			padding: 0;
-			margin: 0;
-		}
 		a {
 			text-decoration: none;
 			font-weight: bold;
@@ -42,6 +37,10 @@
 		}
 		.add_itm {
 			background-image:url('add.png');
+		}
+		
+		tr {
+			line-height: 8px;
 		}
 		
 	</style>
@@ -92,16 +91,13 @@
 		
 		var callback_show = function show_tree(tree) {
 			// Creation d'une nouvelle liste
-			var list = document.createElement("ul");
+			var list = document.createElement("table");
 			// Parcours de l'arbre
 			for (var i = 0; i < tree.length; ++i) {
-				// Creation d'un nouvel element
-				var item = document.createElement("li");
 				// Test si c'est un lien - Ne traite pas les repertoires
 				if (tree[i].url != null) {
-					item.appendChild(create_link(tree[i]));
 					// Liste ordre d'ajout décroissant
-					list.insertBefore(item, list.firstChild);
+					list.insertBefore(create_link(tree[i]), list.firstChild);
 					// Incrémentation du compteur d'item 
 					nb_items++;
 				}
@@ -178,12 +174,17 @@
 			alink3.href = tree_node.url;
 			alink3.appendChild(alink_text);
 			alink3.setAttribute('id','link'+tree_node.id);
-			alink3.onclick = function() {
-				// Ouvre le boomark selectionné dans un nouvel onglet
+			alink3.onclick = function(event) {
+				//Ouvre le boomark selectionné dans un nouvel onglet
 				//chrome.tabs.create({url: tree_node.url});
-				chrome.tabs.getSelected(null, function(tab) {
-					chrome.tabs.update(tab.id,{url: tree_node.url});
-				});
+				if(event.which && event.which == 2) {
+					// clique du milieu - Ouvre le boomark selectionné dans un nouvel onglet
+					chrome.tabs.create({url: tree_node.url});
+				} else {
+					chrome.tabs.getSelected(null, function(tab) {
+						chrome.tabs.update(tab.id,{url: tree_node.url});
+					});
+				}
 			};
 			td_in3.appendChild(alink3);
 			
@@ -200,52 +201,60 @@
 			chrome.bookmarks.getChildren(group_id, callback_show);
 		}
 		
-		function get_selected_tab() {
-			chrome.tabs.getSelected(null, function(tab) {
+		function get_all_tabs() {
+			chrome.tabs.getAllInWindow(null, function(tabs) {
 				var sel_tab = document.getElementById("sel_tab");
 				var table = document.createElement("table");
-				var tr = document.createElement("tr");
-				// Creation du lien open
-				var td_in2 = document.createElement("td");
-				var alink2 = document.createElement("a");
-				alink2.href = "#"
-				alink2.appendChild(document.createTextNode(" "));
-				alink2.setAttribute('id','add'+tab.id);
-				alink2.setAttribute('title','add page');
-				alink2.setAttribute('class','add_itm');
-				alink2.onclick = function() {
-					// sauvegarde la page à ajouter
-					tab_to_add = tab;
-					// parcours pour savoir si l'ajout est possible
-					chrome.bookmarks.getChildren(group_id, callback_add);
-				};
-				td_in2.appendChild(alink2);
-				
-				// Creation du lien url
-				var td_in3 = document.createElement("td");
-				var alink3 = document.createElement("a");
-				if(tab.title) {
-					var title = (tab.title.length>(wrap_size-3)) ? tab.title.substring(0, wrap_size)+'...' : tab.title;
-				} else {
-					var title = "no title";
+				for (var i = 0; i < tabs.length; ++i) {
+					table.appendChild(get_one_tab(tabs[i]));
 				}
-				
-				var alink_text = document.createTextNode(title);
-				alink3.href = tab.url;
-				alink3.appendChild(alink_text);
-				alink3.setAttribute('id','link'+tab.id);
-				td_in3.appendChild(alink3);
-				
-				tr.appendChild(td_in2);
-				tr.appendChild(td_in3);
-				table.appendChild(tr);
 				sel_tab.appendChild(table);
 			});
 		}
 		
+		function get_one_tab(tab) {
+			
+			var tr = document.createElement("tr");
+			// Creation du lien add
+			var td_in2 = document.createElement("td");
+			var alink2 = document.createElement("a");
+			alink2.appendChild(document.createTextNode(" "));
+			alink2.setAttribute('id','add'+tab.id);
+			alink2.setAttribute('title','add page');
+			alink2.setAttribute('class','add_itm');
+			alink2.onclick = function() {
+				// sauvegarde la page à ajouter
+				tab_to_add = tab;
+				// parcours pour savoir si l'ajout est possible
+				chrome.bookmarks.getChildren(group_id, callback_add);
+			};
+			alink2.href = "#"
+			td_in2.appendChild(alink2);
+			
+			// Creation du lien url
+			var td_in3 = document.createElement("td");
+			var alink3 = document.createElement("a");
+			if(tab.title) {
+				var title = (tab.title.length>(wrap_size-3)) ? tab.title.substring(0, wrap_size)+'...' : tab.title;
+			} else {
+				var title = "no title";
+			}
+			
+			var alink_text = document.createTextNode(title);
+			alink3.href = tab.url;
+			alink3.appendChild(alink_text);
+			alink3.setAttribute('id','link'+tab.id);
+			td_in3.appendChild(alink3);
+			
+			tr.appendChild(td_in2);
+			tr.appendChild(td_in3);
+			// Retourne une ligne contenant un lien vers un onglet
+			return tr;
+		}
+		
 		function init() {
-			// fonction d'initialisation onLoad
 			console.log("MyQuickFav - initialisation");
+			// Si la configuration n'est pas trouvée, on ouvre la fenetre des options
 			if(group_id == undefined || group_id == 'null') {
 				chrome.tabs.create({url: 'options.html'});
 				return;
@@ -254,7 +263,7 @@
 			// recupere le dossier des bookmarks en mꮯire
 			get_bookmarks_dir();
 			// recupere l'onglet courant
-			get_selected_tab();
+			get_all_tabs();
 		}
 	</script>
 </head>
